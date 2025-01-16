@@ -29,6 +29,7 @@ async function run() {
     // Send a ping to confirm a successful connection
 
     const StudyCollection = client.db('StudyPlatform').collection('studySection')
+    const BookCollection = client.db('StudyPlatform').collection('book')
 
     app.get('/studySection', async (req, res) => {
       const cursor = StudyCollection.find();
@@ -40,6 +41,19 @@ async function run() {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) }
       const result = await StudyCollection.findOne(query)
+      res.send(result)
+    })
+
+    // Book
+
+    app.get('/book', async (req, res) => {
+      const result = await BookCollection.find().toArray()
+      res.send(result)
+    })
+
+    app.post('/book', async (req, res) => {
+      const book = req.body;
+      const result = await BookCollection.insertOne(book);
       res.send(result)
     })
 

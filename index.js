@@ -33,8 +33,19 @@ async function run() {
     const BookCollection = client.db('StudyPlatform').collection('book')
 
     // users Collection
+
+    app.get('/users', async (req, res) => {
+      const result = await UserCollection.find().toArray()
+      res.send(result)
+    })
+
     app.post('/users', async (req, res) => {
       const users = req.body;
+      const query = { email: users.email }
+      const existingUser = await UserCollection.findOne(query);
+      if (existingUser) {
+        return res.send({message: 'user already exists', insertedId: null})
+      }
       const result = await UserCollection.insertOne(users);
       res.send(result)
     })

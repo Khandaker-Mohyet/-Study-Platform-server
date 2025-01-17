@@ -28,8 +28,20 @@ async function run() {
     await client.connect();
     // Send a ping to confirm a successful connection
 
+    const UserCollection = client.db('StudyPlatform').collection('users')
     const StudyCollection = client.db('StudyPlatform').collection('studySection')
     const BookCollection = client.db('StudyPlatform').collection('book')
+
+    // users Collection
+    app.post('/users', async (req, res) => {
+      const users = req.body;
+      const result = await UserCollection.insertOne(users);
+      res.send(result)
+    })
+
+
+
+
 
     app.get('/studySection', async (req, res) => {
       const cursor = StudyCollection.find();

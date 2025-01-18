@@ -31,6 +31,8 @@ async function run() {
     const UserCollection = client.db('StudyPlatform').collection('users')
     const StudyCollection = client.db('StudyPlatform').collection('studySection')
     const BookCollection = client.db('StudyPlatform').collection('book')
+    const MaterialCollection = client.db('StudyPlatform').collection('book')
+    const NotesCollection = client.db('StudyPlatform').collection('notes')
 
     // users Collection
 
@@ -79,6 +81,14 @@ async function run() {
 
 
 
+    // Study Section
+
+    app.get('/studySection/:email', async (req, res) => {
+      const email = req.params.email;
+      const query = { tutorEmail: email };
+      const result = await StudyCollection.find(query).toArray();
+      res.send(result);
+    });
 
     app.get('/studySection', async (req, res) => {
       const cursor = StudyCollection.find();
@@ -100,13 +110,121 @@ async function run() {
     })
 
 
+    //materials
+
+    app.post('/materials', async (req, res) => {
+      const { title, studySessionId, tutorEmail, link } = req.body;
+      const image = req.files?.image;
+
+      if (!image || !title || !studySessionId || !tutorEmail || !link) {
+        return res.status(400).send({ message: "All fields are required." });
+      }
+
+
+      const imagePath = `uploads/${image.name}`;
+      await image.mv(imagePath);
+
+
+      const material = {
+        title,
+        studySessionId,
+        tutorEmail,
+        image: imagePath,
+        link,
+        uploadDate: new Date(),
+      };
+
+      try {
+        const result = await MaterialCollection.insertOne(material);
+        res.send(result);
+      } catch (error) {
+        console.error(error);
+        res.status(500).send({ message: "Failed to upload material." });
+      }
+    });
+
+    // note
+
+    app.get('/notes', async (req, res) => {
+      const email = req.query.email;
+
+      if (!email) {
+        return res.status(400).send({ message: "Email is required." });
+      }
+
+      const query = { email: email };
+      try {
+        const notes = await NotesCollection.find(query).toArray();
+        res.send(notes);
+      } catch (error) {
+        console.error(error);
+        res.status(500).send({ message: "Failed to fetch notes." });
+      }
+    });
+
+    app.post('/notes', async (req, res) => {
+      const note = req.body;
+
+      if (!note.email || !note.title || !note.description) {
+        return res.status(400).send({ message: "All fields are required." });
+      }
+
+      note.createdAt = new Date(); // Add timestamp
+
+      try {
+        const result = await NotesCollection.insertOne(note);
+        res.send(result);
+      } catch (error) {
+        console.error(error);
+        res.status(500).send({ message: "Failed to create note." });
+      }
+    });
+
+    app.delete('/notes/:id', async (req, res) => {
+      const id = req.params.id;
+
+      try {
+        const query = { _id: new ObjectId(id) };
+        const result = await NotesCollection.deleteOne(query);
+        res.send(result);
+      } catch (error) {
+        console.error(error);
+        res.status(500).send({ message: "Failed to delete note." });
+      }
+    });
+
+    app.put('/notes/:id', async (req, res) => {
+      const id = req.params.id;
+      const updatedData = req.body;
+
+      try {
+        const query = { _id: new ObjectId(id) };
+        const update = {
+          $set: {
+            title: updatedData.title,
+            description: updatedData.description,
+          },
+        };
+
+        const result = await NotesCollection.updateOne(query, update);
+        res.send(result);
+      } catch (error) {
+        console.error(error);
+        res.status(500).send({ message: "Failed to update note." });
+      }
+    });
+
+
+
+
+
+
     // Book
 
     app.get('/book', async (req, res) => {
       const result = await BookCollection.find().toArray()
       res.send(result)
     })
-
 
     app.post('/book', async (req, res) => {
       const book = req.body;

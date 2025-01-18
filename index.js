@@ -39,12 +39,19 @@ async function run() {
       res.send(result)
     })
 
+    app.get('/users/:email', async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email };
+      const result = await UserCollection.findOne(query);
+      res.send(result)
+    });
+
     app.post('/users', async (req, res) => {
       const users = req.body;
       const query = { email: users.email }
       const existingUser = await UserCollection.findOne(query);
       if (existingUser) {
-        return res.send({message: 'user already exists', insertedId: null})
+        return res.send({ message: 'user already exists', insertedId: null })
       }
       const result = await UserCollection.insertOne(users);
       res.send(result)
@@ -86,12 +93,20 @@ async function run() {
       res.send(result)
     })
 
+    app.post('/studySection', async (req, res) => {
+      const study = req.body;
+      const result = await StudyCollection.insertOne(study);
+      res.send(result)
+    })
+
+
     // Book
 
     app.get('/book', async (req, res) => {
       const result = await BookCollection.find().toArray()
       res.send(result)
     })
+
 
     app.post('/book', async (req, res) => {
       const book = req.body;

@@ -37,9 +37,13 @@ async function run() {
     // users Collection
 
     app.get('/users', async (req, res) => {
-      const result = await UserCollection.find().toArray()
-      res.send(result)
-    })
+      const search = req.query.search || '';
+      const query = {
+        displayName: { $regex: search, $options: 'i' }, // Case-insensitive search
+      };
+      const result = await UserCollection.find(query).toArray();
+      res.send(result);
+    });
 
     app.get('/users/:email', async (req, res) => {
       const email = req.params.email;

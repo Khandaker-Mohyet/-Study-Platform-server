@@ -87,6 +87,14 @@ async function run() {
 
     // Study Section
 
+    // **Get all study sessions**
+    app.get('/studySection', async (req, res) => {
+      const cursor = StudyCollection.find();
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
+    // **Get study sessions by tutor's email**
     app.get('/studySection/:email', async (req, res) => {
       const email = req.params.email;
       const query = { tutorEmail: email };
@@ -94,24 +102,65 @@ async function run() {
       res.send(result);
     });
 
-    app.get('/studySection', async (req, res) => {
-      const cursor = StudyCollection.find();
-      const result = await cursor.toArray();
+    // **Get a single study session by ID**
+    app.get('/studySection/single/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await StudyCollection.findOne(query);
       res.send(result);
     });
 
-    app.get('/studySection/:id', async (req, res) => {
-      const id = req.params.id;
-      const query = { _id: new ObjectId(id) }
-      const result = await StudyCollection.findOne(query)
-      res.send(result)
-    })
-
+    // **Add a new study session**
     app.post('/studySection', async (req, res) => {
       const study = req.body;
       const result = await StudyCollection.insertOne(study);
-      res.send(result)
-    })
+      res.send(result);
+    });
+
+    // **Approve a study session**
+    app.patch('/studySection/approve/:id', async (req, res) => {
+      const id = req.params.id;
+      const { fee } = req.body; // Fee information
+      const filter = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          status: 'approved',
+          fee: fee || 0, // Default to 0 if not provided
+        },
+      };
+      const result = await StudyCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    });
+
+    // **Reject (delete) a study session**
+    app.delete('/studySection/reject/:id', async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const result = await StudyCollection.deleteOne(filter);
+      res.send(result);
+    });
+
+    // **Update a study session (optional for admin)**
+    app.patch('/studySection/update/:id', async (req, res) => {
+      const id = req.params.id;
+      const updatedData = req.body;
+      const filter = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: updatedData,
+      };
+      const result = await StudyCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    });
+
+    // **Delete a study session**
+    app.delete('/studySection/delete/:id', async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const result = await StudyCollection.deleteOne(filter);
+      res.send(result);
+    });
+
+    
 
 
     //materials
@@ -224,6 +273,13 @@ async function run() {
 
 
     // Book
+
+    app.get('/book/:email', async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email };
+      const result = await BookCollection.find(query).toArray();
+      res.send(result)
+    });
 
     app.get('/book', async (req, res) => {
       const result = await BookCollection.find().toArray()

@@ -31,6 +31,7 @@ async function run() {
     const UserCollection = client.db('StudyPlatform').collection('users')
     const StudyCollection = client.db('StudyPlatform').collection('studySection')
     const BookCollection = client.db('StudyPlatform').collection('book')
+    const ReviewCollection = client.db('StudyPlatform').collection('review')
     const MaterialCollection = client.db('StudyPlatform').collection('book')
     const NotesCollection = client.db('StudyPlatform').collection('notes')
 
@@ -160,7 +161,25 @@ async function run() {
       res.send(result);
     });
 
-    
+
+    // review
+
+    // Review Collection (POST API)
+    app.post('/review', async (req, res) => {
+      try {
+        const review = req.body;
+        const result = await ReviewCollection.insertOne(review);
+        res.send(result);
+      } catch (err) {
+        console.error("Error adding review:", err);
+        res.status(500).send({ error: "Failed to add review" });
+      }
+    });
+
+
+
+
+
 
 
     //materials

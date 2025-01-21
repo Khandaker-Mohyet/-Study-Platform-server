@@ -192,16 +192,42 @@ async function run() {
 
     //materials
 
+    app.get('/materials', async (req, res) => {
+      const cursor = MaterialCollection.find()
+      const result = await cursor.toArray()
+      res.send(result)
+    })
+
+    app.get('/materials/single/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = {_id: new ObjectId(id)};
+      const result = await MaterialCollection.findOne(query);
+      res.send(result);
+    });
+
+    app.get('/materials/studySession/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = {studySessionId : (id)};
+      const result = await MaterialCollection.find(query).toArray();
+      res.send(result);
+    });
+
+    app.get('/materials/:email', async (req, res) => {
+      const email = req.params.email;
+      const query = { tutorEmail: email };
+      const result = await MaterialCollection.find(query).toArray();
+      res.send(result);
+    });
+
+
+
     app.post("/materials", async (req, res) => {
       try {
         const { title, studySessionId, tutorEmail, link } = req.body;
 
-        
         if (!title || !studySessionId || !tutorEmail || !link) {
           return res.status(400).send({ message: "All fields are required." });
         }
-
-        
         const material = {
           title,
           studySessionId,
@@ -209,15 +235,41 @@ async function run() {
           link,
           uploadDate: new Date(),
         };
-
         const result = await MaterialCollection.insertOne(material);
-
         res.status(201).send({ insertedId: result.insertedId });
       } catch (error) {
         console.error(error);
         res.status(500).send({ message: "Failed to upload material." });
       }
     });
+
+    app.delete("/materials/delete/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) }
+      const result = await MaterialCollection.deleteOne(query);
+      res.send(result)
+     })
+
+    
+
+    // app.delete("/materials/:id", async (req, res) => {
+    //   try {
+    //     const id = req.params.id;
+
+    //     const result = await MaterialCollection.deleteOne({ _id: new ObjectId(id) });
+
+    //     if (result.deletedCount === 0) {
+    //       return res.status(404).send({ message: "Material not found." });
+    //     }
+
+    //     res.status(200).send({ message: "Material deleted successfully." });
+    //   } catch (error) {
+    //     console.error("Failed to delete material:", error);
+    //     res.status(500).send({ message: "Failed to delete material." });
+    //   }
+    // });
+
+
 
 
     // note
@@ -304,6 +356,8 @@ async function run() {
       const result = await BookCollection.find(query).toArray();
       res.send(result)
     });
+
+    app.get()
 
     app.get('/book', async (req, res) => {
       const result = await BookCollection.find().toArray()

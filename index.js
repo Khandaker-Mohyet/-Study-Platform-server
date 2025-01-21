@@ -1,5 +1,6 @@
 require('dotenv').config()
 const express = require('express')
+const fileUpload = require("express-fileupload");
 const cors = require('cors')
 const app = express()
 const port = process.env.PORT || 5000
@@ -8,6 +9,7 @@ const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 // middlewar
 app.use(cors())
 app.use(express.json())
+app.use(fileUpload());
 
 
 
@@ -32,7 +34,7 @@ async function run() {
     const StudyCollection = client.db('StudyPlatform').collection('studySection')
     const BookCollection = client.db('StudyPlatform').collection('book')
     const ReviewCollection = client.db('StudyPlatform').collection('review')
-    const MaterialCollection = client.db('StudyPlatform').collection('book')
+    const MaterialCollection = client.db('StudyPlatform').collection('materials')
     const NotesCollection = client.db('StudyPlatform').collection('notes')
 
     // users Collection
@@ -133,13 +135,19 @@ async function run() {
       res.send(result);
     });
 
-    // **Reject (delete) a study session**
-    app.delete('/studySection/reject/:id', async (req, res) => {
+    // **Reject a study session (update status to "rejected")**
+    app.patch('/studySection/reject/:id', async (req, res) => {
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) };
-      const result = await StudyCollection.deleteOne(filter);
+      const updateDoc = {
+        $set: {
+          status: "rejected",
+        },
+      };
+      const result = await StudyCollection.updateOne(filter, updateDoc);
       res.send(result);
     });
+
 
     // **Update a study session (optional for admin)**
     app.patch('/studySection/update/:id', async (req, res) => {
@@ -184,36 +192,33 @@ async function run() {
 
     //materials
 
-    app.post('/materials', async (req, res) => {
-      const { title, studySessionId, tutorEmail, link } = req.body;
-      const image = req.files?.image;
-
-      if (!image || !title || !studySessionId || !tutorEmail || !link) {
-        return res.status(400).send({ message: "All fields are required." });
-      }
-
-
-      const imagePath = `uploads/${image.name}`;
-      await image.mv(imagePath);
-
-
-      const material = {
-        title,
-        studySessionId,
-        tutorEmail,
-        image: imagePath,
-        link,
-        uploadDate: new Date(),
-      };
-
+    app.post("/materials", async (req, res) => {
       try {
+        const { title, studySessionId, tutorEmail, link } = req.body;
+
+        
+        if (!title || !studySessionId || !tutorEmail || !link) {
+          return res.status(400).send({ message: "All fields are required." });
+        }
+
+        
+        const material = {
+          title,
+          studySessionId,
+          tutorEmail,
+          link,
+          uploadDate: new Date(),
+        };
+
         const result = await MaterialCollection.insertOne(material);
-        res.send(result);
+
+        res.status(201).send({ insertedId: result.insertedId });
       } catch (error) {
         console.error(error);
         res.status(500).send({ message: "Failed to upload material." });
       }
     });
+
 
     // note
 

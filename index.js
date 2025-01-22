@@ -42,7 +42,7 @@ async function run() {
     app.get('/users', async (req, res) => {
       const search = req.query.search || '';
       const query = {
-        displayName: { $regex: search, $options: 'i' }, // Case-insensitive search
+        displayName: { $regex: search, $options: 'i' },
       };
       const result = await UserCollection.find(query).toArray();
       res.send(result);
@@ -90,12 +90,24 @@ async function run() {
 
     // Study Section
 
-    // **Get all study sessions**
+    // **Get all study sessions with pagination**
+    
     app.get('/studySection', async (req, res) => {
-      const cursor = StudyCollection.find();
-      const result = await cursor.toArray();
-      res.send(result);
+      const page = parseInt(req.query.page) || 1; 
+      const limit = parseInt(req.query.limit) || 6; 
+      const skip = (page - 1) * limit; 
+
+      const total = await StudyCollection.countDocuments(); of items
+      const result = await StudyCollection.find().skip(skip).limit(limit).toArray();
+
+      res.send({
+        data: result,
+        total,
+        totalPages: Math.ceil(total / limit),
+        currentPage: page,
+      });
     });
+
 
     // **Get study sessions by tutor's email**
     app.get('/studySection/:email', async (req, res) => {
@@ -200,14 +212,14 @@ async function run() {
 
     app.get('/materials/single/:id', async (req, res) => {
       const id = req.params.id;
-      const query = {_id: new ObjectId(id)};
+      const query = { _id: new ObjectId(id) };
       const result = await MaterialCollection.findOne(query);
       res.send(result);
     });
 
     app.get('/materials/studySession/:id', async (req, res) => {
       const id = req.params.id;
-      const query = {studySessionId : (id)};
+      const query = { studySessionId: (id) };
       const result = await MaterialCollection.find(query).toArray();
       res.send(result);
     });
@@ -249,39 +261,39 @@ async function run() {
       const result = await MaterialCollection.deleteOne(query);
       res.send(result)
     })
-    
+
     app.put("/materials/update/:id", async (req, res) => {
-  try {
-    const id = req.params.id;
-    const { title, studySessionId, tutorEmail, link } = req.body;
+      try {
+        const id = req.params.id;
+        const { title, studySessionId, tutorEmail, link } = req.body;
 
-    if (!title || !studySessionId || !tutorEmail || !link) {
-      return res.status(400).send({ message: "All fields are required." });
-    }
+        if (!title || !studySessionId || !tutorEmail || !link) {
+          return res.status(400).send({ message: "All fields are required." });
+        }
 
-    const filter = { _id: new ObjectId(id) };
-    const updateDoc = {
-      $set: {
-        title,
-        studySessionId,
-        tutorEmail,
-        link,
-        updatedAt: new Date(),
-      },
-    };
+        const filter = { _id: new ObjectId(id) };
+        const updateDoc = {
+          $set: {
+            title,
+            studySessionId,
+            tutorEmail,
+            link,
+            updatedAt: new Date(),
+          },
+        };
 
-    const result = await MaterialCollection.updateOne(filter, updateDoc);
+        const result = await MaterialCollection.updateOne(filter, updateDoc);
 
-    if (result.modifiedCount > 0) {
-      res.status(200).send({ message: "Material updated successfully." });
-    } else {
-      res.status(404).send({ message: "Material not found or no changes made." });
-    }
-  } catch (error) {
-    console.error(error);
-    res.status(500).send({ message: "Failed to update material." });
-  }
-});
+        if (result.modifiedCount > 0) {
+          res.status(200).send({ message: "Material updated successfully." });
+        } else {
+          res.status(404).send({ message: "Material not found or no changes made." });
+        }
+      } catch (error) {
+        console.error(error);
+        res.status(500).send({ message: "Failed to update material." });
+      }
+    });
 
 
 

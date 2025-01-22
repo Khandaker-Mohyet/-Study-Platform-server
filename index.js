@@ -248,26 +248,42 @@ async function run() {
       const query = { _id: new ObjectId(id) }
       const result = await MaterialCollection.deleteOne(query);
       res.send(result)
-     })
-
+    })
     
+    app.put("/materials/update/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+    const { title, studySessionId, tutorEmail, link } = req.body;
 
-    // app.delete("/materials/:id", async (req, res) => {
-    //   try {
-    //     const id = req.params.id;
+    if (!title || !studySessionId || !tutorEmail || !link) {
+      return res.status(400).send({ message: "All fields are required." });
+    }
 
-    //     const result = await MaterialCollection.deleteOne({ _id: new ObjectId(id) });
+    const filter = { _id: new ObjectId(id) };
+    const updateDoc = {
+      $set: {
+        title,
+        studySessionId,
+        tutorEmail,
+        link,
+        updatedAt: new Date(),
+      },
+    };
 
-    //     if (result.deletedCount === 0) {
-    //       return res.status(404).send({ message: "Material not found." });
-    //     }
+    const result = await MaterialCollection.updateOne(filter, updateDoc);
 
-    //     res.status(200).send({ message: "Material deleted successfully." });
-    //   } catch (error) {
-    //     console.error("Failed to delete material:", error);
-    //     res.status(500).send({ message: "Failed to delete material." });
-    //   }
-    // });
+    if (result.modifiedCount > 0) {
+      res.status(200).send({ message: "Material updated successfully." });
+    } else {
+      res.status(404).send({ message: "Material not found or no changes made." });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({ message: "Failed to update material." });
+  }
+});
+
+
 
 
 
@@ -357,7 +373,6 @@ async function run() {
       res.send(result)
     });
 
-    app.get()
 
     app.get('/book', async (req, res) => {
       const result = await BookCollection.find().toArray()

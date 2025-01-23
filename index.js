@@ -2,6 +2,7 @@ require('dotenv').config()
 const express = require('express')
 const fileUpload = require("express-fileupload");
 const cors = require('cors')
+const jwt = require('jsonwebtoken');
 const app = express()
 const port = process.env.PORT || 5000
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
@@ -37,9 +38,45 @@ async function run() {
     const MaterialCollection = client.db('StudyPlatform').collection('materials')
     const NotesCollection = client.db('StudyPlatform').collection('notes')
 
+    // JWT
+    app.post('/jwt', async (req, res) => {
+      const user = req.body;
+      const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
+        expiresIn: '2h'
+      });
+      res.send({ token });
+    })
+
+    const verifyToken = (req, res, next) => {
+      // console.log('inside verify token', req.headers.authorization);
+      if (!req.headers.authorization) {
+        return res.status(401).send({ message: 'unauthorized access' });
+      }
+      const token = req.headers.authorization.split(' ')[1];
+      jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+        if (err) {
+          return res.status(401).send({ message: 'unauthorized access' })
+        }
+        req.decoded = decoded;
+        next();
+      })
+    }
+
+    // use verify admin after verifyToken
+    const verifyAdmin = async (req, res, next) => {
+      const email = req.decoded.email;
+      const query = { email: email };
+      const user = await UserCollection.findOne(query);
+      const isAdmin = user?.role === 'admin';
+      if (!isAdmin) {
+        return res.status(403).send({ message: 'forbidden access' });
+      }
+      next();
+    }
+
     // users Collection
 
-    app.get('/users', async (req, res) => {
+    app.get('/users', verifyToken, async (req, res) => {
       const search = req.query.search || '';
       const query = {
         displayName: { $regex: search, $options: 'i' },
@@ -47,6 +84,22 @@ async function run() {
       const result = await UserCollection.find(query).toArray();
       res.send(result);
     });
+
+    // app.get('/users/admin/:email', verifyToken, async (req, res) => {
+    //   const email = req.params.email;
+
+    //   if (email !== req.decoded.email) {
+    //     return res.status(403).send({ message: 'forbidden access' })
+    //   }
+
+    //   const query = { email: email };
+    //   const user = await UserCollection.findOne(query);
+    //   let admin = false;
+    //   if (user) {
+    //     admin = user?.role === 'admin';
+    //   }
+    //   res.send({ admin });
+    // })
 
     app.get('/users/:email', async (req, res) => {
       const email = req.params.email;
@@ -90,14 +143,20 @@ async function run() {
 
     // Study Section
 
-    // **Get all study sessions with pagination**
-    
-    app.get('/studySection', async (req, res) => {
-      const page = parseInt(req.query.page) || 1; 
-      const limit = parseInt(req.query.limit) || 6; 
-      const skip = (page - 1) * limit; 
+    // app.get('/studySection', async (req, res) => {
+    //   const cursor = StudyCollection.find()
+    //   const result = await cursor.toArray();
+    //   res.send(result);
+    // })
 
-      const total = await StudyCollection.countDocuments(); of items
+    // **Get all study sessions with pagination**
+
+    app.get('/studySection', async (req, res) => {
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 6;
+      const skip = (page - 1) * limit;
+
+      const total = await StudyCollection.countDocuments();
       const result = await StudyCollection.find().skip(skip).limit(limit).toArray();
 
       res.send({
@@ -210,6 +269,13 @@ async function run() {
       res.send(result)
     })
 
+    app.get('/materials/:email', async (req, res) => {
+      const email = req.params.email;
+      const query = { tutorEmail: email };
+      const result = await MaterialCollection.find(query).toArray();
+      res.send(result);
+    });
+
     app.get('/materials/single/:id', async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
@@ -224,26 +290,21 @@ async function run() {
       res.send(result);
     });
 
-    app.get('/materials/:email', async (req, res) => {
-      const email = req.params.email;
-      const query = { tutorEmail: email };
-      const result = await MaterialCollection.find(query).toArray();
-      res.send(result);
-    });
 
 
 
     app.post("/materials", async (req, res) => {
       try {
-        const { title, studySessionId, tutorEmail, link } = req.body;
+        const { title, studySessionId, tutorEmail,photo, link } = req.body;
 
-        if (!title || !studySessionId || !tutorEmail || !link) {
+        if (!title || !studySessionId || !tutorEmail ||!photo || !link) {
           return res.status(400).send({ message: "All fields are required." });
         }
         const material = {
           title,
           studySessionId,
           tutorEmail,
+          photo,
           link,
           uploadDate: new Date(),
         };
@@ -265,9 +326,9 @@ async function run() {
     app.put("/materials/update/:id", async (req, res) => {
       try {
         const id = req.params.id;
-        const { title, studySessionId, tutorEmail, link } = req.body;
+        const { title, studySessionId, tutorEmail, photo, link } = req.body;
 
-        if (!title || !studySessionId || !tutorEmail || !link) {
+        if (!title || !studySessionId || !tutorEmail || !photo || !link) {
           return res.status(400).send({ message: "All fields are required." });
         }
 
@@ -277,6 +338,7 @@ async function run() {
             title,
             studySessionId,
             tutorEmail,
+            photo,
             link,
             updatedAt: new Date(),
           },

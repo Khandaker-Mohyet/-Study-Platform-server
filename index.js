@@ -76,13 +76,24 @@ async function run() {
 
     // users Collection
 
-    app.get('/users', async (req, res) => {
+    app.get('/users',verifyToken, async (req, res) => {
       const search = req.query.search || '';
       const query = {
         displayName: { $regex: search, $options: 'i' },
       };
       const result = await UserCollection.find(query).toArray();
       res.send(result);
+    });
+
+    app.get('/users/tutors', async (req, res) => {
+      try {
+        const query = { role: "Tutor" };
+        const tutors = await UserCollection.find(query).toArray(); // Assuming you're using MongoDB
+        res.send(tutors);
+      } catch (error) {
+        console.error("Error fetching tutors:", error);
+        res.status(500).send({ message: "Failed to fetch tutors" });
+      }
     });
 
 
@@ -190,6 +201,24 @@ async function run() {
       const result = await StudyCollection.updateOne(filter, updateDoc);
       res.send(result);
     });
+
+    // **requestApprove a study session**
+    app.patch('/studySection/requestApprove/:id', async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          status: 'pending',
+        },
+      };
+      try {
+        const result = await StudyCollection.updateOne(filter, updateDoc);
+        res.send(result);
+      } catch (error) {
+        res.status(500).send({ error: 'Failed to update status' });
+      }
+    });
+
 
     // **Reject a study session (update status to "rejected")**
     app.patch('/studySection/reject/:id', async (req, res) => {

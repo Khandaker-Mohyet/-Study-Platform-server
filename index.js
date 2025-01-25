@@ -28,7 +28,7 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
     // Send a ping to confirm a successful connection
 
     const UserCollection = client.db('StudyPlatform').collection('users')
@@ -76,7 +76,7 @@ async function run() {
 
     // users Collection
 
-    app.get('/users', verifyToken, async (req, res) => {
+    app.get('/users', async (req, res) => {
       const search = req.query.search || '';
       const query = {
         displayName: { $regex: search, $options: 'i' },
@@ -85,21 +85,6 @@ async function run() {
       res.send(result);
     });
 
-    // app.get('/users/admin/:email', verifyToken, async (req, res) => {
-    //   const email = req.params.email;
-
-    //   if (email !== req.decoded.email) {
-    //     return res.status(403).send({ message: 'forbidden access' })
-    //   }
-
-    //   const query = { email: email };
-    //   const user = await UserCollection.findOne(query);
-    //   let admin = false;
-    //   if (user) {
-    //     admin = user?.role === 'admin';
-    //   }
-    //   res.send({ admin });
-    // })
 
     app.get('/users/:email', async (req, res) => {
       const email = req.params.email;
@@ -143,29 +128,29 @@ async function run() {
 
     // Study Section
 
-    // app.get('/studySection', async (req, res) => {
-    //   const cursor = StudyCollection.find()
-    //   const result = await cursor.toArray();
-    //   res.send(result);
-    // })
+    app.get('/studySection', async (req, res) => {
+      const cursor = StudyCollection.find()
+      const result = await cursor.toArray();
+      res.send(result);
+    })
 
     // **Get all study sessions with pagination**
 
-    app.get('/studySection', async (req, res) => {
-      const page = parseInt(req.query.page) || 1;
-      const limit = parseInt(req.query.limit) || 6;
-      const skip = (page - 1) * limit;
+    // app.get('/studySection', async (req, res) => {
+    //   const page = parseInt(req.query.page) || 1;
+    //   const limit = parseInt(req.query.limit) || 6;
+    //   const skip = (page - 1) * limit;
 
-      const total = await StudyCollection.countDocuments();
-      const result = await StudyCollection.find().skip(skip).limit(limit).toArray();
+    //   const total = await StudyCollection.countDocuments();
+    //   const result = await StudyCollection.find().skip(skip).limit(limit).toArray();
 
-      res.send({
-        data: result,
-        total,
-        totalPages: Math.ceil(total / limit),
-        currentPage: page,
-      });
-    });
+    //   res.send({
+    //     data: result,
+    //     total,
+    //     totalPages: Math.ceil(total / limit),
+    //     currentPage: page,
+    //   });
+    // });
 
 
     // **Get study sessions by tutor's email**
@@ -295,9 +280,9 @@ async function run() {
 
     app.post("/materials", async (req, res) => {
       try {
-        const { title, studySessionId, tutorEmail,photo, link } = req.body;
+        const { title, studySessionId, tutorEmail, photo, link } = req.body;
 
-        if (!title || !studySessionId || !tutorEmail ||!photo || !link) {
+        if (!title || !studySessionId || !tutorEmail || !photo || !link) {
           return res.status(400).send({ message: "All fields are required." });
         }
         const material = {
@@ -447,11 +432,11 @@ async function run() {
       res.send(result)
     });
 
-
     app.get('/book', async (req, res) => {
       const result = await BookCollection.find().toArray()
       res.send(result)
     })
+
 
     app.post('/book', async (req, res) => {
       const book = req.body;
@@ -461,7 +446,7 @@ async function run() {
 
 
 
-    await client.db("admin").command({ ping: 1 });
+    // await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error

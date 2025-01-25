@@ -37,6 +37,7 @@ async function run() {
     const ReviewCollection = client.db('StudyPlatform').collection('review')
     const MaterialCollection = client.db('StudyPlatform').collection('materials')
     const NotesCollection = client.db('StudyPlatform').collection('notes')
+    const rejectCollection = client.db('StudyPlatform').collection('reject')
 
     // JWT
     app.post('/jwt', async (req, res) => {
@@ -470,6 +471,14 @@ async function run() {
     app.post('/book', async (req, res) => {
       const book = req.body;
       const result = await BookCollection.insertOne(book);
+      res.send(result)
+    })
+
+    // reject
+
+    app.post('/reject', async (req, res) => {
+      const reject = req.body;
+      const result = await rejectCollection.insertOne(reject)
       res.send(result)
     })
 
